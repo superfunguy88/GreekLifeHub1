@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greek Life Hub</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <!-- Header/Navigation -->
+        <header class="main-header">
+            <div class="container">
+                <div class="logo">
+                    <h1>Greek<span>Life</span>Hub</h1>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#events">Events</a></li>
+                        <li><a href="#alumni">Alumni</a></li>
+                        <li><a href="#donations">Donations</a></li>
+                        <li><a href="#messages">Messages</a></li>
+                    </ul>
+                </nav>
+                <div class="user-profile">
+                    <img src="assets/images/default-avatar.png" alt="Profile" class="profile-pic">
+                    <span class="username">John_Doe</span>
+                </div>
+            </div>
+
+            <!-- Login Modal (hidden by default) -->
+            <div id="login-modal" class="modal logged-out" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Login to GreekLifeHub</h2>
+                        <span class="close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+                        </form>
+                        <div class="login-help">
+                            <p>Test accounts: john_doe, sarah_alumni, president</p>
+                            <p>Password for all: password123</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="dashboard-section">
+                <div class="container">
+                    <h2>Welcome Back, John!</h2>
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <h3>Upcoming Events</h3>
+                            <ul class="event-list">
+                                <li>Homecoming - Oct 15</li>
+                                <li>Charity Gala - Oct 22</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h3>Recent Messages</h3>
+                            <ul class="message-list">
+                                <li>President: Meeting Tomorrow</li>
+                                <li>Alumni Network: New Opportunities</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h3>Quick Actions</h3>
+                            <button class="btn-primary">Create Event</button>
+                            <button class="btn-secondary">Send Message</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Events Section -->
+            <section id="events" class="events-section">
+                <div class="container">
+                    <h2>Chapter Events</h2>
+                    <div class="event-controls">
+                        <button class="btn-primary">Create New Event</button>
+                        <input type="text" placeholder="Search events..." class="search-input">
+                    </div>
+                    <div class="events-grid">
+                        <!-- Event cards will be populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alumni Network Section -->
+            <section id="alumni" class="alumni-section">
+                <div class="container">
+                    <h2>Alumni Network</h2>
+                    <div class="alumni-directory">
+                        <div class="search-filters">
+                            <input type="text" placeholder="Search alumni..." class="search-input">
+                            <select class="chapter-filter">
+                                <option>All Chapters</option>
+                                <option>Alpha Phi</option>
+                                <option>Sigma Chi</option>
+                                <option>Delta Gamma</option>
+                                <option>Phi Delta Theta</option>
+                            </select>
+                        </div>
+                        <div class="alumni-grid">
+                            <!-- Alumni profiles will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Donations Section -->
+            <section id="donations" class="donations-section">
+                <div class="container">
+                    <h2>Support Your Chapter</h2>
+                    <div class="donation-options">
+                        <div class="donation-card">
+                            <h3>General Fund</h3>
+                            <p>Support ongoing chapter activities</p>
+                            <button class="btn-donate">Donate Now</button>
+                        </div>
+                        <div class="donation-card">
+                            <h3>Scholarship Fund</h3>
+                            <p>Help future members with education</p>
+                            <button class="btn-donate">Donate Now</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Messages Section -->
+            <section id="messages" class="messages-section">
+                <div class="container">
+                    <h2>Messages</h2>
+                    <div class="messaging-interface">
+                        <div class="contacts-list">
+                            <!-- Contacts will be populated by JS -->
+                        </div>
+                        <div class="chat-window">
+                            <div class="chat-header">
+                                <h3>Chapter President</h3>
+                            </div>
+                            <div class="chat-messages">
+                                <!-- Messages will be populated by JS -->
+                            </div>
+                            <div class="message-input">
+                                <input type="text" placeholder="Type your message...">
+                                <button class="send-btn">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="container">
+                <p>&copy; 2025 GreekLifeHub. Connecting Greek communities nationwide.</p>
+            </div>
+        </footer>
+        </div>
+
+        <script src="js/main.js"></script>
+        <script src="js/auth.js"></script>
+        <script src="js/chat.js"></script>
+</body>
+</html>
