@@ -787,6 +787,7 @@ class GreekLifeHub {
             }
         }, 4000);
     }
+    
 }
 
 // Enhanced User Authentication
@@ -1041,6 +1042,26 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     window.greekLifeApp = new GreekLifeHub();
 });
+
+
+// More Sensitive Shrinking Header
+let lastScrollTop = 0;
+
+window.addEventListener('scroll', function() {
+    const header = document.querySelector('.main-header');
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > 50) { // Trigger earlier - changed from 100 to 50
+        header.classList.add('shrunk');
+    } else {
+        header.classList.remove('shrunk');
+    }
+    
+    lastScrollTop = scrollTop;
+});
+
+
+
 
 // Export for potential module usage
 if (typeof module !== 'undefined' && module.exports) {

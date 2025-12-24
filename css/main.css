@@ -1562,3 +1562,66 @@ body {
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
 }
+/* More Dramatic Shrinking Header */
+.main-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 1rem 0;
+    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
+    transition: padding 0.3s ease;
+}
+
+.main-header.shrunk {
+    padding: 0.1rem 0; /* Reduced from 0.5rem to 0.25rem */
+    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
+}
+
+.main-header .logo h1 {
+    transition: font-size 0.3s ease;
+    font-size: 2.2rem; /* Normal size */
+}
+
+.main-header.shrunk .logo h1 {
+    font-size: 1.4rem; /* Much smaller - reduced from 1.6rem to 1.4rem */
+}
+
+.main-header .main-nav a {
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.25rem; /* Normal padding */
+    font-size: 1rem; /* Normal font size */
+}
+
+.main-header.shrunk .main-nav a {
+    padding: 0.4rem 0.8rem; /* Much smaller padding */
+    font-size: 0.8rem; /* Much smaller font */
+}
+
+.main-header .user-profile {
+    transition: all 0.3s ease;
+    padding: 0.5rem 1.5rem; /* Normal padding */
+}
+
+.main-header.shrunk .user-profile {
+    padding: 0.25rem 0.75rem; /* Much smaller padding */
+}
+
+.main-header .profile-pic {
+    transition: all 0.3s ease;
+    width: 45px; /* Normal size */
+    height: 45px;
+}
+
+.main-header.shrunk .profile-pic {
+    width: 20px; /* Much smaller */
+    height: 20px;
+}
+
+.main-header .username {
+    transition: font-size 0.3s ease;
+    font-size: 1.1rem; /* Normal size */
+}
+
+.main-header.shrunk .username {
+    font-size: 0.6rem; /* Much smaller */
+}
