@@ -41,7 +41,19 @@ class GreekLifeHub {
                 this.handleFormSubmit(e.target);
             });
         });
+        
+        // Add modal close functionality
+        const closeButtons = document.querySelectorAll('.close');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
     }
+
 
     navigateToSection(sectionId) {
         // Hide all main sections
@@ -524,7 +536,9 @@ class GreekLifeHub {
     }
 
     processDonation(button) {
-        const fundType = button.parentElement.querySelector('h3').textContent;
+        const card = button.closest('.donation-card');
+        const fundType = card.querySelector('h3').textContent;
+        
         const amount = prompt(`Enter donation amount for ${fundType}:`, '50');
         
         if (amount && !isNaN(amount) && amount > 0) {
@@ -539,6 +553,7 @@ class GreekLifeHub {
             this.showNotification('Please enter a valid amount', 'error');
         }
     }
+
 
     initializeMessages() {
         // Set up sample contacts
@@ -696,12 +711,22 @@ class GreekLifeHub {
         }
     }
 
+    setupDonationButtons() {
+        const donateButtons = document.querySelectorAll('.btn-donate');
+        donateButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.processDonation(e.target);
+            });
+        });
+    }
+
+
     filterEvents(query) {
         const eventCards = document.querySelectorAll('.event-card');
         eventCards.forEach(card => {
             const title = card.querySelector('h3').textContent.toLowerCase();
             const description = card.querySelector('.event-description').textContent.toLowerCase();
-            if (title.includes(query.toLowerCase()) || description.includes(query.toLowerCase())) {
+            if (query === '' || title.includes(query.toLowerCase()) || description.includes(query.toLowerCase())) {
                 card.style.display = 'block';
             } else {
                 card.style.display = 'none';
@@ -709,18 +734,20 @@ class GreekLifeHub {
         });
     }
 
+
     filterAlumni(query) {
         const alumniCards = document.querySelectorAll('.alumni-card');
         alumniCards.forEach(card => {
             const name = card.querySelector('h3').textContent.toLowerCase();
             const position = card.querySelector('.alumni-position').textContent.toLowerCase();
-            if (name.includes(query.toLowerCase()) || position.includes(query.toLowerCase())) {
+            if (query === '' || name.includes(query.toLowerCase()) || position.includes(query.toLowerCase())) {
                 card.style.display = 'block';
             } else {
                 card.style.display = 'none';
             }
         });
     }
+
 
     // Enhanced notification system
     showNotification(message, type = 'info') {
