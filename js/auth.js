@@ -1,4 +1,4 @@
-// auth.js - Updated with registration functionality
+// auth.js - Clean authentication system
 class UserAuth {
     constructor() {
         this.currentUser = null;
@@ -11,17 +11,14 @@ class UserAuth {
         this.setupLogoutEvents();
         this.setupRegisterEvents();
         this.setupModalToggle();
-        this.setupAuthButton(); // Add this line
+        this.setupAuthButton();
     }
-
 
     checkExistingSession() {
         const userData = localStorage.getItem('greekLifeUser');
         if (userData) {
             this.currentUser = JSON.parse(userData);
             this.updateUIForLoggedInUser();
-        } else {
-            this.showLoginModal();
         }
     }
 
@@ -116,7 +113,6 @@ class UserAuth {
             });
         }
     }
-
 
     async handleLogin(form) {
         const username = form.querySelector('#username').value;
@@ -311,7 +307,10 @@ class UserAuth {
         localStorage.removeItem('greekLifeUser');
         this.updateUIForLoggedOutUser();
         this.showNotification('You have been logged out', 'info');
-        this.showLoginModal();
+        // Show login modal after logout
+        setTimeout(() => {
+            this.showAuthModal();
+        }, 1000);
     }
 
     updateUIForLoggedInUser() {
@@ -330,6 +329,7 @@ class UserAuth {
         });
 
         document.getElementById('logout-btn').style.display = 'inline-block';
+        document.getElementById('auth-btn').style.display = 'none';
         document.querySelector('.user-profile').style.display = 'flex';
     }
 
@@ -340,13 +340,7 @@ class UserAuth {
         });
 
         document.getElementById('logout-btn').style.display = 'none';
-    }
-
-    showLoginModal() {
-        const modal = document.getElementById('login-modal');
-        if (modal) {
-            modal.style.display = 'block';
-        }
+        document.getElementById('auth-btn').style.display = 'inline-block';
     }
 
     showAuthModal() {
@@ -362,7 +356,6 @@ class UserAuth {
             modal.style.display = 'block';
         }
     }
-
 
     showNotification(message, type = 'info') {
         const existingNotification = document.querySelector('.notification');
