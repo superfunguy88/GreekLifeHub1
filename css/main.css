@@ -1914,3 +1914,12 @@ body {
     box-sizing: border-box;
     background: white;
 }
+
+#auth-btn {
+    display: inline-block !important;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+}
