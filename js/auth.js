@@ -11,7 +11,9 @@ class UserAuth {
         this.setupLogoutEvents();
         this.setupRegisterEvents();
         this.setupModalToggle();
+        this.setupAuthButton(); // Add this line
     }
+
 
     checkExistingSession() {
         const userData = localStorage.getItem('greekLifeUser');
@@ -105,6 +107,17 @@ class UserAuth {
         }
     }
 
+    setupAuthButton() {
+        const authBtn = document.getElementById('auth-btn');
+        if (authBtn) {
+            authBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showAuthModal();
+            });
+        }
+    }
+
+
     async handleLogin(form) {
         const username = form.querySelector('#username').value;
         const password = form.querySelector('#password').value;
@@ -186,6 +199,7 @@ class UserAuth {
                             username: 'john_doe',
                             name: 'John Doe',
                             email: 'john@example.com',
+                            password: 'password123',
                             role: 'Member',
                             chapter: 'Alpha Phi',
                             graduationYear: 2024,
@@ -196,6 +210,7 @@ class UserAuth {
                             username: 'sarah_alumni',
                             name: 'Sarah Johnson',
                             email: 'sarah@example.com',
+                            password: 'password123',
                             role: 'Alumni',
                             chapter: 'Alpha Phi',
                             graduationYear: 2018,
@@ -206,6 +221,7 @@ class UserAuth {
                             username: 'president',
                             name: 'Mike President',
                             email: 'president@example.com',
+                            password: 'password123',
                             role: 'President',
                             chapter: 'Alpha Phi',
                             graduationYear: 2024,
@@ -332,6 +348,21 @@ class UserAuth {
             modal.style.display = 'block';
         }
     }
+
+    showAuthModal() {
+        // Hide register modal if visible
+        const registerModal = document.getElementById('register-modal');
+        if (registerModal) {
+            registerModal.style.display = 'none';
+        }
+        
+        // Show login modal
+        const modal = document.getElementById('login-modal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    }
+
 
     showNotification(message, type = 'info') {
         const existingNotification = document.querySelector('.notification');
