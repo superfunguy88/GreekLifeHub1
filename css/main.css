@@ -1888,3 +1888,29 @@ body {
     max-width: 300px;
     word-wrap: break-word;
 }
+/* Add these styles for the registration modal */
+.modal-toggle {
+    text-align: center;
+    margin: 15px 0;
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+}
+
+.modal-toggle a {
+    color: var(--primary-gold);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.modal-toggle a:hover {
+    text-decoration: underline;
+}
+
+#register-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background: white;
+}

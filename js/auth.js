@@ -1,4 +1,4 @@
-// auth.js
+// auth.js - Updated with registration functionality
 class UserAuth {
     constructor() {
         this.currentUser = null;
@@ -9,6 +9,8 @@ class UserAuth {
         this.checkExistingSession();
         this.setupLoginEvents();
         this.setupLogoutEvents();
+        this.setupRegisterEvents();
+        this.setupModalToggle();
     }
 
     checkExistingSession() {
@@ -42,10 +44,55 @@ class UserAuth {
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
             const modal = document.getElementById('login-modal');
+            const registerModal = document.getElementById('register-modal');
             if (e.target === modal) {
                 modal.style.display = 'none';
             }
+            if (e.target === registerModal) {
+                registerModal.style.display = 'none';
+            }
         });
+    }
+
+    setupRegisterEvents() {
+        // Registration form submission
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleRegistration(e.target);
+            });
+        }
+
+        // Close register modal
+        const closeBtn = document.querySelector('#register-modal .close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                document.getElementById('register-modal').style.display = 'none';
+            });
+        }
+    }
+
+    setupModalToggle() {
+        // Toggle between login and register modals
+        const showRegisterLink = document.getElementById('show-register');
+        const showLoginLink = document.getElementById('show-login');
+        
+        if (showRegisterLink) {
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('register-modal').style.display = 'block';
+            });
+        }
+        
+        if (showLoginLink) {
+            showLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('register-modal').style.display = 'none';
+                document.getElementById('login-modal').style.display = 'block';
+            });
+        }
     }
 
     setupLogoutEvents() {
@@ -80,48 +127,152 @@ class UserAuth {
         }
     }
 
+    async handleRegistration(form) {
+        const name = form.querySelector('#reg-name').value;
+        const username = form.querySelector('#reg-username').value;
+        const email = form.querySelector('#reg-email').value;
+        const password = form.querySelector('#reg-password').value;
+        const chapter = form.querySelector('#reg-chapter').value;
+        const role = form.querySelector('#reg-role').value;
+        
+        // Validation
+        if (!name || !username || !email || !password || !chapter || !role) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            this.showNotification('Password must be at least 6 characters', 'error');
+            return;
+        }
+        
+        try {
+            const result = await this.createUser({
+                name,
+                username,
+                email,
+                password,
+                chapter,
+                role
+            });
+            
+            if (result.success) {
+                this.showNotification('Account created successfully! Please login.', 'success');
+                // Switch to login modal
+                document.getElementById('register-modal').style.display = 'none';
+                document.getElementById('login-modal').style.display = 'block';
+            } else {
+                this.showNotification(result.message, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Registration failed. Please try again.', 'error');
+        }
+    }
+
     authenticateUser(username, password) {
         return new Promise((resolve) => {
             setTimeout(() => {
-                const mockUsers = {
-                    'john_doe': {
-                        id: 1,
-                        username: 'john_doe',
-                        name: 'John Doe',
-                        email: 'john@example.com',
-                        role: 'Member',
-                        chapter: 'Alpha Phi',
-                        graduationYear: 2024,
-                        avatar: 'JD'
-                    },
-                    'sarah_alumni': {
-                        id: 2,
-                        username: 'sarah_alumni',
-                        name: 'Sarah Johnson',
-                        email: 'sarah@example.com',
-                        role: 'Alumni',
-                        chapter: 'Alpha Phi',
-                        graduationYear: 2018,
-                        avatar: 'SJ'
-                    },
-                    'president': {
-                        id: 3,
-                        username: 'president',
-                        name: 'Mike President',
-                        email: 'president@example.com',
-                        role: 'President',
-                        chapter: 'Alpha Phi',
-                        graduationYear: 2024,
-                        avatar: 'MP'
-                    }
-                };
+                // Get all users from localStorage
+                const usersData = localStorage.getItem('greekLifeUsers');
+                let users = {};
+                
+                if (usersData) {
+                    users = JSON.parse(usersData);
+                } else {
+                    // Default users if none exist
+                    users = {
+                        'john_doe': {
+                            id: 1,
+                            username: 'john_doe',
+                            name: 'John Doe',
+                            email: 'john@example.com',
+                            role: 'Member',
+                            chapter: 'Alpha Phi',
+                            graduationYear: 2024,
+                            avatar: 'JD'
+                        },
+                        'sarah_alumni': {
+                            id: 2,
+                            username: 'sarah_alumni',
+                            name: 'Sarah Johnson',
+                            email: 'sarah@example.com',
+                            role: 'Alumni',
+                            chapter: 'Alpha Phi',
+                            graduationYear: 2018,
+                            avatar: 'SJ'
+                        },
+                        'president': {
+                            id: 3,
+                            username: 'president',
+                            name: 'Mike President',
+                            email: 'president@example.com',
+                            role: 'President',
+                            chapter: 'Alpha Phi',
+                            graduationYear: 2024,
+                            avatar: 'MP'
+                        }
+                    };
+                }
 
-                const user = mockUsers[username];
-                if (user && password === 'password123') {
-                    resolve(user);
+                const user = users[username];
+                if (user && user.password === password) {
+                    // Remove password before returning user data
+                    const { password, ...userData } = user;
+                    resolve(userData);
                 } else {
                     resolve(null);
                 }
+            }, 500);
+        });
+    }
+
+    createUser(userData) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                // Get existing users
+                const usersData = localStorage.getItem('greekLifeUsers');
+                let users = usersData ? JSON.parse(usersData) : {};
+                
+                // Check if username already exists
+                if (users[userData.username]) {
+                    resolve({
+                        success: false,
+                        message: 'Username already exists. Please choose another.'
+                    });
+                    return;
+                }
+                
+                // Check if email already exists
+                const emailExists = Object.values(users).some(user => user.email === userData.email);
+                if (emailExists) {
+                    resolve({
+                        success: false,
+                        message: 'Email already registered. Please use another email.'
+                    });
+                    return;
+                }
+                
+                // Create new user
+                const newUser = {
+                    id: Date.now(), // Simple ID generation
+                    username: userData.username,
+                    name: userData.name,
+                    email: userData.email,
+                    password: userData.password,
+                    role: userData.role,
+                    chapter: userData.chapter,
+                    graduationYear: userData.role === 'Alumni' ? 2020 : new Date().getFullYear(),
+                    avatar: userData.name.split(' ').map(n => n[0]).join('').toUpperCase()
+                };
+                
+                // Save user
+                users[userData.username] = newUser;
+                localStorage.setItem('greekLifeUsers', JSON.stringify(users));
+                
+                resolve({
+                    success: true,
+                    message: 'User created successfully!'
+                });
             }, 500);
         });
     }
