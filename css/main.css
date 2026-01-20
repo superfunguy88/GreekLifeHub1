@@ -301,6 +301,15 @@ body {
     font-weight: 600;
 }
 
+.message.me .message-time {
+    text-align: right;
+}
+
+.message.them .message-time {
+    text-align: left;
+}
+
+
 .quick-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1128,7 +1137,7 @@ body {
     max-width: 70%;
 }
 
-.message.sent {
+.message.me {
     margin-left: auto;
 }
 
@@ -1138,13 +1147,13 @@ body {
     display: inline-block;
 }
 
-.message.received .message-content {
+.message.them .message-content {
     background: white;
     border: 1px solid #eee;
     border-top-left-radius: 5px;
 }
 
-.message.sent .message-content {
+.message.me .message-content {
     background: linear-gradient(135deg, var(--primary-gold), #F3C544);
     color: var(--dark-blue);
     border-top-right-radius: 5px;
@@ -1304,86 +1313,7 @@ body {
 .card:nth-child(2) { animation-delay: 0.2s; }
 .card:nth-child(3) { animation-delay: 0.3s; }
 
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header h2 {
-    margin: 0;
-    color: var(--dark-blue);
-}
-
-.close {
-    font-size: 2rem;
-    cursor: pointer;
-    color: #999;
-}
-
-.close:hover {
-    color: #333;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--primary-gold);
-}
-
-.login-help {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: #666;
-}
+/* (Auth modal styles live in auth.css) */
 /* Mobile Responsive Styles */
 @media screen and (max-width: 768px) {
     /* Top Bar / Header */
@@ -1626,93 +1556,7 @@ body {
     font-size: 0.6rem; /* Much smaller */
 }
 
-/* Login Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-    background-color: #fff;
-    margin: 10% auto;
-    padding: 0;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.modal-header {
-    padding: 20px;
-    background: linear-gradient(135deg, var(--primary-gold), var(--light-blue));
-    color: white;
-    border-radius: 8px 8px 0 0;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.close {
-    color: white;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close:hover {
-    color: #eee;
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-.btn-primary, .btn-secondary, .btn-outline, .btn-donate {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary-gold), #d4af37);
-    color: white;
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, var(--light-blue), #5d8aa8);
-    color: white;
-}
+/* (Auth modal/button styles live in auth.css) */
 
 .btn-outline {
     background: transparent;
@@ -1725,186 +1569,9 @@ body {
     color: white;
 }
 
-/* Chat Styles */
-.messaging-interface {
-    display: flex;
-    gap: 20px;
-    height: 500px;
-}
 
-.contacts-list {
-    flex: 1;
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    overflow-y: auto;
-}
-
-.contact-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.contact-item:hover {
-    background: #e9ecef;
-}
-
-.contact-item.active {
-    background: #d4edda;
-}
-
-.contact-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-gold), var(--light-blue));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.contact-info h4 {
-    margin: 0 0 5px 0;
-    font-size: 1rem;
-}
-
-.contact-role {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-.last-message {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #495057;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chat-window {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.chat-header {
-    background: linear-gradient(135deg, var(--primary-gold), var(--light-blue));
-    color: white;
-    padding: 15px;
-}
-
-.chat-messages {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-    background: #fff;
-}
-
-.message {
-    margin-bottom: 15px;
-    max-width: 80%;
-}
-
-.message.me {
-    margin-left: auto;
-}
-
-.message.them {
-    margin-right: auto;
-}
-
-.message-content {
-    padding: 10px 15px;
-    border-radius: 18px;
-    display: inline-block;
-}
-
-.message.me .message-content {
-    background: #d4edda;
-    border-bottom-right-radius: 4px;
-}
-
-.message.them .message-content {
-    background: #e9ecef;
-    border-bottom-left-radius: 4px;
-}
-
-.message-time {
-    font-size: 0.7rem;
-    color: #6c757d;
-    margin-top: 3px;
-    text-align: right;
-}
-
-.message-input {
-    display: flex;
-    padding: 15px;
-    background: #f8f9fa;
-    border-top: 1px solid #ddd;
-}
-
-.message-input input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    margin-right: 10px;
-}
-
-.send-btn {
-    background: linear-gradient(135deg, var(--primary-gold), #d4af37);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 20px;
-    cursor: pointer;
-}
-
-/* Notification Styles */
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    border-radius: 8px;
-    color: white;
-    font-weight: bold;
-    z-index: 10000;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    max-width: 300px;
-    word-wrap: break-word;
-}
-/* Add these styles for the registration modal */
-.modal-toggle {
-    text-align: center;
-    margin: 15px 0;
-    padding: 10px 0;
-    border-top: 1px solid #eee;
-}
-
-.modal-toggle a {
-    color: var(--primary-gold);
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.modal-toggle a:hover {
-    text-decoration: underline;
-}
+/* (Notification styles live in auth.css) */
+/* (Modal toggle styles live in auth.css) */
 
 #register-form select {
     width: 100%;
@@ -1916,8 +1583,9 @@ body {
 }
 
 #auth-btn {
-    display: inline-block !important;
+    transition: opacity .2s ease;
 }
+
 
 .user-profile {
     display: flex;

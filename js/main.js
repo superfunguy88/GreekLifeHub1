@@ -1,4 +1,4 @@
-// Greek Life Hub - Complete Application
+// Greek Life Hub - Cleaned Application Controller (no auth / chat conflicts)
 class GreekLifeHub {
     constructor() {
         this.currentUser = null;
@@ -7,13 +7,55 @@ class GreekLifeHub {
     }
 
     initializeApp() {
+        // NEW: sync current user at startup + listen for changes
+        this.syncUserFromStorage();
+        this.setupAuthBridge();
+
         this.setupEventListeners();
-        this.loadUserData();
         this.setupNavigation();
         this.initializeSections();
         this.setupSearch();
         this.setupDonationButtons();
     }
+
+    // ---------------- AUTH BRIDGE (NEW) ----------------
+
+    syncUserFromStorage() {
+        try {
+            const stored = localStorage.getItem('greekLifeUser');
+            this.currentUser = stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            console.warn('Failed to parse greekLifeUser from storage:', e);
+            this.currentUser = null;
+        }
+    }
+
+    setupAuthBridge() {
+        // Listen for auth changes emitted by auth-real.js
+        window.addEventListener('greeklife:auth-changed', (e) => {
+            const user = e && e.detail ? e.detail.user : null;
+            this.currentUser = user || null;
+            this.onAuthChanged();
+        });
+
+        // Also run once right now so app state matches initial storage
+        this.onAuthChanged();
+    }
+
+    onAuthChanged() {
+        // Update UI that depends on "currentUser"
+        // (auth-real.js already updates username + avatar + buttons)
+        this.updateUserProfile();
+
+        // OPTIONAL: if user logs out while on a private-ish section, kick them home
+        // You can get stricter later — for now it's just a sane default.
+        if (!this.currentUser && this.currentSection !== 'dashboard') {
+            // Don't be obnoxious, but keep it consistent
+            // this.navigateToSection('dashboard');
+        }
+    }
+
+    // ---------------- GENERAL EVENT LISTENERS ----------------
 
     setupEventListeners() {
         // Navigation event listeners
@@ -26,23 +68,14 @@ class GreekLifeHub {
             });
         });
 
-        // Button event listeners
+        // Button event listeners (for things like "Create New Event", "Donate Now", "RSVP")
         document.querySelectorAll('.btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 this.handleButtonClick(e.target);
             });
         });
 
-        // Form submissions
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleFormSubmit(e.target);
-            });
-        });
-        
-        // Add modal close functionality
+        // Modal close buttons
         const closeButtons = document.querySelectorAll('.close');
         closeButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -53,7 +86,6 @@ class GreekLifeHub {
             });
         });
     }
-
 
     navigateToSection(sectionId) {
         // Hide all main sections
@@ -73,12 +105,10 @@ class GreekLifeHub {
     }
 
     updateActiveNavLink(activeSectionId) {
-        // Remove active class from all links
         document.querySelectorAll('.main-nav a').forEach(link => {
             link.classList.remove('active');
         });
-        
-        // Add active class to the correct link
+
         const activeLink = document.querySelector(`a[href="#${activeSectionId}"]`);
         if (activeLink) {
             activeLink.classList.add('active');
@@ -88,10 +118,9 @@ class GreekLifeHub {
     handleButtonClick(button) {
         const buttonText = button.textContent.trim();
         const buttonClass = button.className;
-        
-        // Handle different button types
+
         if (buttonClass.includes('btn-primary') || buttonClass.includes('btn-secondary')) {
-            switch(buttonText) {
+            switch (buttonText) {
                 case 'Create New Event':
                     this.openEventModal();
                     break;
@@ -99,7 +128,7 @@ class GreekLifeHub {
                     this.processDonation(button);
                     break;
                 case 'Send Message':
-                    this.navigateToSection('messages');
+                    this.navigateToSection('messages'); // Let ChatSystem own the actual messaging
                     break;
                 case 'RSVP':
                     this.handleRSVP(button);
@@ -110,58 +139,14 @@ class GreekLifeHub {
         }
     }
 
-    handleFormSubmit(form) {
-        const formId = form.id;
-        
-        switch(formId) {
-            case 'login-form':
-                this.handleLogin(form);
-                break;
-            case 'event-form':
-                this.handleEventCreation(form);
-                break;
-            default:
-                console.log('Form submitted:', formId);
-        }
-    }
-
-    handleLogin(form) {
-        const username = form.querySelector('#username').value;
-        const password = form.querySelector('#password').value;
-        
-        // Simple validation
-        if (username && password) {
-            this.login(username, password);
-        } else {
-            this.showNotification('Please enter both username and password', 'error');
-        }
-    }
-
-    login(username, password) {
-        // Simulate login - in real app, this would call an API
-        if (username.length > 0 && password.length > 0) {
-            this.currentUser = {
-                name: username,
-                role: 'Member',
-                chapter: 'Alpha Phi',
-                graduationYear: 2024
-            };
-            
-            localStorage.setItem('loggedInUser', username);
-            this.updateUserProfile();
-            this.navigateToSection('dashboard');
-            this.showNotification(`Welcome back, ${username}!`, 'success');
-            return true;
-        }
-        return false;
-    }
+    // -------- EVENTS --------
 
     handleEventCreation(form) {
         const eventName = form.querySelector('#event-name').value;
         const eventDate = form.querySelector('#event-date').value;
         const eventLocation = form.querySelector('#event-location').value;
         const eventDescription = form.querySelector('#event-description').value;
-        
+
         if (eventName && eventDate && eventLocation) {
             this.createEvent({
                 title: eventName,
@@ -176,22 +161,22 @@ class GreekLifeHub {
     }
 
     createEvent(eventData) {
-        // Add event to the events grid
         const eventsGrid = document.querySelector('.events-grid');
         if (eventsGrid) {
             const eventCard = this.createEventCard(eventData);
             eventsGrid.insertBefore(eventCard, eventsGrid.firstChild);
         }
-        
-        // Close modal if it exists
-        const modal = document.querySelector('.modal');
-        if (modal) {
-            modal.style.display = 'none';
+
+        const modal = document.querySelector('#event-modal');
+        if (modal && modal.parentNode) {
+            modal.parentNode.removeChild(modal);
         }
     }
 
     openEventModal() {
-        // Create modal dynamically
+        const existing = document.getElementById('event-modal');
+        if (existing) existing.remove();
+
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.id = 'event-modal';
@@ -208,8 +193,8 @@ class GreekLifeHub {
                             <input type="text" id="event-name" name="event-name" required>
                         </div>
                         <div class="form-group">
-                            <label for="event-date">Date & Time</label>
-                            <input type="datetime-local" id="event-date" name="event-date" required>
+                            <label for="event-date">Date</label>
+                            <input type="date" id="event-date" name="event-date" required>
                         </div>
                         <div class="form-group">
                             <label for="event-location">Location</label>
@@ -224,26 +209,24 @@ class GreekLifeHub {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
-        
-        // Add event listeners
+
         const closeBtn = modal.querySelector('.close');
         closeBtn.addEventListener('click', () => {
             document.body.removeChild(modal);
         });
-        
+
         window.addEventListener('click', (e) => {
             if (e.target === modal) {
                 document.body.removeChild(modal);
             }
         });
-        
+
         const form = modal.querySelector('#event-form');
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleEventCreation(form);
-            document.body.removeChild(modal);
         });
     }
 
@@ -269,7 +252,6 @@ class GreekLifeHub {
                 url: window.location.href
             }).catch(console.error);
         } else {
-            // Fallback for browsers that don't support Web Share API
             const text = `Check out this event: ${eventData.title} on ${eventData.date} at ${eventData.location}`;
             navigator.clipboard.writeText(text).then(() => {
                 this.showNotification('Event details copied to clipboard!', 'success');
@@ -277,28 +259,7 @@ class GreekLifeHub {
         }
     }
 
-    loadUserData() {
-        // Check if user is logged in
-        const savedUser = localStorage.getItem('loggedInUser');
-        if (savedUser) {
-            this.currentUser = {
-                name: savedUser,
-                role: 'Member',
-                chapter: 'Alpha Phi',
-                graduationYear: 2024
-            };
-        } else {
-            this.currentUser = {
-                name: 'John Doe',
-                role: 'Member',
-                chapter: 'Alpha Phi',
-                graduationYear: 2024
-            };
-        }
-        
-        // Update UI with user data
-        this.updateUserProfile();
-    }
+    // -------- USER PROFILE (used by auth-real.js + now by app state) --------
 
     updateUserProfile() {
         if (this.currentUser) {
@@ -306,33 +267,35 @@ class GreekLifeHub {
             usernameElements.forEach(element => {
                 element.textContent = this.currentUser.name;
             });
-            
+
             const avatarElements = document.querySelectorAll('.profile-pic');
             avatarElements.forEach(element => {
-                element.textContent = this.currentUser.name.charAt(0);
+                element.setAttribute('alt', this.currentUser.name);
             });
+        } else {
+            // Keep this lightweight — auth-real.js already does the full logged-out reset.
+            // This just ensures app state isn't stale.
         }
     }
 
+    // -------- SECTIONS INIT --------
+
     setupNavigation() {
-        // Set initial active section
         this.navigateToSection('dashboard');
     }
 
     initializeSections() {
-        // Initialize each section with sample data
         this.initializeDashboard();
         this.initializeEvents();
         this.initializeAlumni();
         this.initializeDonations();
-        this.initializeMessages();
+        // Messages are handled by ChatSystem in chat.js
     }
 
     initializeDashboard() {
-        // Add more dynamic content to dashboard
         const eventList = document.querySelector('.event-list');
         const messageList = document.querySelector('.message-list');
-        
+
         if (eventList) {
             eventList.innerHTML = `
                 <li>Homecoming - Oct 15 <span class="badge">RSVP</span></li>
@@ -340,7 +303,7 @@ class GreekLifeHub {
                 <li>Alumni Networking - Nov 5 <span class="badge new">NEW</span></li>
             `;
         }
-        
+
         if (messageList) {
             messageList.innerHTML = `
                 <li>President: Meeting Tomorrow <span class="badge">NEW</span></li>
@@ -348,365 +311,176 @@ class GreekLifeHub {
                 <li>Scholarship Committee: Application Deadline</li>
             `;
         }
-        
-        // Add quick action event listeners
+
         const createEventBtn = document.querySelector('.dashboard-section .btn-primary');
         if (createEventBtn) {
             createEventBtn.addEventListener('click', () => {
                 this.openEventModal();
             });
         }
-        
-        const sendMessageBtn = document.querySelector('.dashboard-section .btn-secondary');
-        if (sendMessageBtn) {
-            sendMessageBtn.addEventListener('click', () => {
-                this.navigateToSection('messages');
-            });
-        }
     }
 
     initializeEvents() {
-        // Populate events with sample data
         const eventsGrid = document.querySelector('.events-grid');
         if (!eventsGrid) return;
-        
-        // Clear existing content
-        eventsGrid.innerHTML = '';
-        
+
         const sampleEvents = [
             {
-                title: 'Homecoming Dance',
-                date: 'October 15, 2024',
-                location: 'University Center',
-                description: 'Annual homecoming celebration with dinner, dancing, and entertainment'
+                title: 'Homecoming Weekend',
+                date: 'October 15, 2025',
+                location: 'Greek Row',
+                description: 'Join us for a weekend of reunions, tailgates, and chapter events.'
             },
             {
                 title: 'Charity Gala',
-                date: 'October 22, 2024',
-                location: 'Grand Ballroom',
-                description: 'Fundraising event for local children\'s hospital'
+                date: 'October 22, 2025',
+                location: 'Campus Ballroom',
+                description: 'Formal charity event supporting local community organizations.'
             },
             {
                 title: 'Alumni Networking Night',
-                date: 'November 5, 2024',
-                location: 'Business School',
-                description: 'Connect with alumni in various industries for career opportunities'
+                date: 'November 5, 2025',
+                location: 'Alumni Center',
+                description: 'Connect with alumni in your field and build your professional network.'
             }
         ];
 
-        sampleEvents.forEach(event => {
-            const eventCard = this.createEventCard(event);
+        eventsGrid.innerHTML = '';
+        sampleEvents.forEach(eventData => {
+            const eventCard = this.createEventCard(eventData);
             eventsGrid.appendChild(eventCard);
         });
     }
 
     createEventCard(eventData) {
-        const card = document.createElement('div');
+        const card = document.createElement('article');
         card.className = 'event-card';
         card.innerHTML = `
-            <div class="event-image">
-                <span>📅</span>
-            </div>
-            <div class="event-details">
-                <h3>${eventData.title}</h3>
-                <div class="event-meta">
-                    <span>📍 ${eventData.location}</span>
-                    <span>⏰ ${eventData.date}</span>
-                </div>
-                <p class="event-description">${eventData.description}</p>
-                <div class="event-actions">
-                    <button class="btn btn-secondary rsvp-btn">RSVP</button>
-                    <button class="btn btn-outline share-btn">Share</button>
-                </div>
+            <h3>${eventData.title}</h3>
+            <p class="event-meta">${eventData.date} • ${eventData.location}</p>
+            <p>${eventData.description}</p>
+            <div class="event-actions">
+                <button class="btn btn-secondary">RSVP</button>
+                <button class="btn btn-outline">Share</button>
             </div>
         `;
-        
-        // Add event listeners
-        const rsvpButton = card.querySelector('.rsvp-btn');
-        rsvpButton.addEventListener('click', () => {
-            this.handleRSVP(rsvpButton);
-        });
-        
-        const shareButton = card.querySelector('.share-btn');
-        shareButton.addEventListener('click', () => {
-            this.shareEvent(eventData);
-        });
-        
+
+        const rsvpBtn = card.querySelector('.btn-secondary');
+        const shareBtn = card.querySelector('.btn-outline');
+
+        rsvpBtn.addEventListener('click', () => this.handleRSVP(rsvpBtn));
+        shareBtn.addEventListener('click', () => this.shareEvent(eventData));
+
         return card;
     }
 
     initializeAlumni() {
-        // Populate alumni directory with sample data
         const alumniGrid = document.querySelector('.alumni-grid');
         if (!alumniGrid) return;
-        
-        const sampleAlumni = [
+
+        const alumniData = [
             {
                 name: 'Sarah Johnson',
                 chapter: 'Alpha Phi',
-                position: 'Marketing Director at Google',
-                graduation: '2018',
-                avatar: 'SJ'
+                gradYear: 2018,
+                company: 'Google',
+                role: 'Software Engineer',
+                location: 'Seattle, WA'
             },
             {
-                name: 'Michael Chen',
+                name: 'Mike Chen',
                 chapter: 'Sigma Chi',
-                position: 'Financial Analyst at Goldman Sachs',
-                graduation: '2019',
-                avatar: 'MC'
+                gradYear: 2016,
+                company: 'Goldman Sachs',
+                role: 'Investment Analyst',
+                location: 'New York, NY'
             },
             {
-                name: 'Emily Rodriguez',
+                name: 'Emily Thompson',
                 chapter: 'Delta Gamma',
-                position: 'Attorney at Law',
-                graduation: '2020',
-                avatar: 'ER'
-            },
-            {
-                name: 'David Thompson',
-                chapter: 'Phi Delta Theta',
-                position: 'Entrepreneur - Tech Startup Founder',
-                graduation: '2017',
-                avatar: 'DT'
+                gradYear: 2019,
+                company: 'Nike',
+                role: 'Marketing Specialist',
+                location: 'Portland, OR'
             }
         ];
 
         alumniGrid.innerHTML = '';
-        sampleAlumni.forEach(alumni => {
-            const alumniCard = this.createAlumniCard(alumni);
-            alumniGrid.appendChild(alumniCard);
+        alumniData.forEach(alumni => {
+            const card = this.createAlumniCard(alumni);
+            alumniGrid.appendChild(card);
         });
     }
 
-    createAlumniCard(alumniData) {
-        const card = document.createElement('div');
+    createAlumniCard(alumni) {
+        const card = document.createElement('article');
         card.className = 'alumni-card';
         card.innerHTML = `
-            <div class="alumni-avatar" style="background: linear-gradient(135deg, var(--primary-gold), var(--light-blue));">
-                ${alumniData.avatar}
-            </div>
-            <div class="alumni-info">
-                <h3>${alumniData.name}</h3>
-                <div class="alumni-chapter">${alumniData.chapter} '${alumniData.graduation.slice(-2)}</div>
-                <div class="alumni-position">${alumniData.position}</div>
-                <div class="alumni-actions">
-                    <button class="btn btn-outline connect-btn">Connect</button>
-                    <button class="btn btn-secondary message-btn">Message</button>
-                </div>
+            <h3>${alumni.name}</h3>
+            <p class="alumni-meta">${alumni.chapter} • Class of ${alumni.gradYear}</p>
+            <p>${alumni.role} at ${alumni.company}</p>
+            <p class="alumni-location">${alumni.location}</p>
+            <div class="alumni-actions">
+                <button class="btn btn-secondary">Connect</button>
+                <button class="btn btn-outline">Message</button>
             </div>
         `;
-        
-        // Add click events
-        const connectButton = card.querySelector('.connect-btn');
-        connectButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.sendConnectionRequest(alumniData);
+
+        const connectBtn = card.querySelector('.btn-secondary');
+        const messageBtn = card.querySelector('.btn-outline');
+
+        connectBtn.addEventListener('click', () => {
+            this.sendConnectionRequest(alumni);
         });
-        
-        const messageButton = card.querySelector('.message-btn');
-        messageButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.openMessageToAlumni(alumniData);
+
+        messageBtn.addEventListener('click', () => {
+            this.openMessageToAlumni(alumni);
         });
-        
+
         return card;
     }
 
-    sendConnectionRequest(alumniData) {
-        // Simulate connection request
-        this.showNotification(`Connection request sent to ${alumniData.name}!`, 'success');
-        
-        // In a real app, this would send a request to the server
-        setTimeout(() => {
-            this.showNotification(`${alumniData.name} accepted your connection request!`, 'success');
-        }, 2000);
+    sendConnectionRequest(alumni) {
+        this.showNotification(`Connection request sent to ${alumni.name}`, 'success');
     }
 
-    openMessageToAlumni(alumniData) {
-        // Navigate to messages section and open chat with alumni
+    openMessageToAlumni(alumni) {
         this.navigateToSection('messages');
-        this.showNotification(`Opening chat with ${alumniData.name}...`, 'info');
-        
-        // In a real implementation, this would open the specific chat
+        this.showNotification(`Opening message thread with ${alumni.name}...`, 'info');
+        // ChatSystem will handle the actual chat UI
     }
 
     initializeDonations() {
-        // Donation section is already set up with HTML
-        console.log('Donations initialized');
+        const donationStats = document.querySelector('.donation-stats');
+        if (!donationStats) return;
+
+        donationStats.innerHTML = `
+            <div class="stat-card">
+                <h3>$25,000</h3>
+                <p>Raised This Year</p>
+            </div>
+            <div class="stat-card">
+                <h3>120</h3>
+                <p>Active Donors</p>
+            </div>
+            <div class="stat-card">
+                <h3>15</h3>
+                <p>Scholarships Funded</p>
+            </div>
+        `;
     }
 
     processDonation(button) {
-        const card = button.closest('.donation-card');
-        const fundType = card.querySelector('h3').textContent;
-        
-        const amount = prompt(`Enter donation amount for ${fundType}:`, '50');
-        
-        if (amount && !isNaN(amount) && amount > 0) {
-            this.showNotification(`Thank you for your $${amount} donation to the ${fundType}!`, 'success');
-            
-            // In a real app, this would process a payment
-            // For now, we'll just simulate it
-            setTimeout(() => {
-                this.showNotification('Donation processed successfully!', 'success');
-            }, 1500);
-        } else if (amount !== null) {
-            this.showNotification('Please enter a valid amount', 'error');
-        }
+        this.showNotification('Donation flow coming soon!', 'info');
     }
 
+    // -------- SEARCH / FILTER --------
 
-    initializeMessages() {
-        // Set up sample contacts
-        const contactsList = document.querySelector('.contacts-list');
-        if (!contactsList) return;
-        
-        const sampleContacts = [
-            { 
-                id: 1,
-                name: 'Chapter President', 
-                role: 'Active Leadership', 
-                lastMessage: 'Meeting tomorrow at 6pm',
-                avatar: 'CP'
-            },
-            { 
-                id: 2,
-                name: 'Alumni Coordinator', 
-                role: 'Alumni Relations', 
-                lastMessage: 'New networking event',
-                avatar: 'AC'
-            },
-            { 
-                id: 3,
-                name: 'Sarah Johnson', 
-                role: 'Alumni - Google', 
-                lastMessage: 'Job opportunity available',
-                avatar: 'SJ'
-            },
-            { 
-                id: 4,
-                name: 'Mike Chen', 
-                role: 'Alumni - Goldman Sachs', 
-                lastMessage: 'Happy to help with interviews',
-                avatar: 'MC'
-            }
-        ];
-
-        contactsList.innerHTML = '';
-        sampleContacts.forEach(contact => {
-            const contactItem = this.createContactItem(contact);
-            contactsList.appendChild(contactItem);
-        });
-
-        // Add click handlers to contacts
-        document.querySelectorAll('.contact-item').forEach((item, index) => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.contact-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-                item.classList.add('active');
-                this.openChat(sampleContacts[index]);
-            });
-        });
-
-        // Set up message sending
-        const sendButton = document.querySelector('.send-btn');
-        const messageInput = document.querySelector('.message-input input');
-        
-        if (sendButton && messageInput) {
-            sendButton.addEventListener('click', () => {
-                this.sendMessage(messageInput.value);
-                messageInput.value = '';
-            });
-            
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.sendMessage(messageInput.value);
-                    messageInput.value = '';
-                }
-            });
-        }
-    }
-
-    createContactItem(contactData) {
-        const item = document.createElement('div');
-        item.className = 'contact-item';
-        item.innerHTML = `
-            <div class="contact-avatar">${contactData.avatar}</div>
-            <div class="contact-info">
-                <h4>${contactData.name}</h4>
-                <p>${contactData.role}</p>
-                <p>${contactData.lastMessage}</p>
-            </div>
-        `;
-        return item;
-    }
-
-    openChat(contact) {
-        const chatHeader = document.querySelector('.chat-header h3');
-        const chatMessages = document.querySelector('.chat-messages');
-        
-        if (chatHeader && chatMessages) {
-            chatHeader.textContent = contact.name;
-            chatMessages.innerHTML = '';
-            
-            // Add sample messages
-            const messages = [
-                { from: 'them', text: contact.lastMessage },
-                { from: 'me', text: 'Thanks for the update!' },
-                { from: 'them', text: 'See you at the meeting then.' }
-            ];
-            
-            messages.forEach(msg => {
-                const messageElement = document.createElement('div');
-                messageElement.className = `message ${msg.from}`;
-                messageElement.textContent = msg.text;
-                chatMessages.appendChild(messageElement);
-            });
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-    }
-
-    sendMessage(text) {
-        if (!text.trim()) return;
-        
-        const chatMessages = document.querySelector('.chat-messages');
-        if (chatMessages) {
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message me';
-            messageElement.textContent = text;
-            chatMessages.appendChild(messageElement);
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Simulate reply
-            setTimeout(() => {
-                const replyElement = document.createElement('div');
-                replyElement.className = 'message them';
-                replyElement.textContent = 'Thanks for your message!';
-                chatMessages.appendChild(replyElement);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 1000);
-        }
-    }
-
-    // Enhanced Search Functionality
     setupSearch() {
-        // Events search
-        const eventsSearch = document.querySelector('#events .search-input');
-        if (eventsSearch) {
-            eventsSearch.addEventListener('input', (e) => {
-                this.filterEvents(e.target.value);
-            });
-        }
-        
-        // Alumni search
-        const alumniSearch = document.querySelector('#alumni .search-input');
-        if (alumniSearch) {
-            alumniSearch.addEventListener('input', (e) => {
-                this.filterAlumni(e.target.value);
+        const searchInput = document.querySelector('.search-bar input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.filterContent(e.target.value);
             });
         }
     }
@@ -714,69 +488,60 @@ class GreekLifeHub {
     setupDonationButtons() {
         const donateButtons = document.querySelectorAll('.btn-donate');
         donateButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                this.processDonation(e.target);
+            button.addEventListener('click', () => {
+                this.processDonation(button);
             });
         });
     }
 
+    filterContent(query) {
+        const searchQuery = query.toLowerCase().trim();
+
+        this.filterEvents(searchQuery);
+        this.filterAlumni(searchQuery);
+    }
 
     filterEvents(query) {
         const eventCards = document.querySelectorAll('.event-card');
         eventCards.forEach(card => {
-            const title = card.querySelector('h3').textContent.toLowerCase();
-            const description = card.querySelector('.event-description').textContent.toLowerCase();
-            if (query === '' || title.includes(query.toLowerCase()) || description.includes(query.toLowerCase())) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(query) ? 'block' : 'none';
         });
     }
-
 
     filterAlumni(query) {
         const alumniCards = document.querySelectorAll('.alumni-card');
         alumniCards.forEach(card => {
-            const name = card.querySelector('h3').textContent.toLowerCase();
-            const position = card.querySelector('.alumni-position').textContent.toLowerCase();
-            if (query === '' || name.includes(query.toLowerCase()) || position.includes(query.toLowerCase())) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(query) ? 'block' : 'none';
         });
     }
 
+    // -------- NOTIFICATIONS --------
 
-    // Enhanced notification system
     showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotifications = document.querySelectorAll('.notification');
-        existingNotifications.forEach(notification => {
-            notification.remove();
-        });
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
 
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
-        
-        // Style the notification
+
         Object.assign(notification.style, {
             position: 'fixed',
             top: '20px',
             right: '20px',
-            padding: '15px 25px',
+            padding: '12px 18px',
             borderRadius: '8px',
-            color: 'white',
-            fontWeight: 'bold',
-            zIndex: '10000',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+            color: '#fff',
+            fontWeight: '600',
+            zIndex: '9999',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            maxWidth: '300px',
-            wordWrap: 'break-word'
+            transition: 'opacity 0.3s ease',
+            maxWidth: '320px'
         });
 
         if (type === 'success') {
@@ -788,11 +553,9 @@ class GreekLifeHub {
         } else {
             notification.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
         }
-        
-        // Add to document
+
         document.body.appendChild(notification);
-        
-        // Click to dismiss
+
         notification.addEventListener('click', () => {
             notification.style.opacity = '0';
             setTimeout(() => {
@@ -801,8 +564,7 @@ class GreekLifeHub {
                 }
             }, 300);
         });
-        
-        // Remove after 4 seconds
+
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.opacity = '0';
@@ -814,34 +576,23 @@ class GreekLifeHub {
             }
         }, 4000);
     }
-    
 }
 
-// Initialize auth when DOM loads
-document.addEventListener('DOMContentLoaded', () => {
-    window.userAuth = new UserAuth();
-});
-
-
-
-// More Sensitive Shrinking Header
+// Shrinking header
 let lastScrollTop = 0;
 
-window.addEventListener('scroll', function() {
+window.addEventListener('scroll', function () {
     const header = document.querySelector('.main-header');
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (scrollTop > 50) { // Trigger earlier - changed from 100 to 50
+
+    if (scrollTop > 50) {
         header.classList.add('shrunk');
     } else {
         header.classList.remove('shrunk');
     }
-    
+
     lastScrollTop = scrollTop;
 });
-
-
-
 
 // Export for potential module usage
 if (typeof module !== 'undefined' && module.exports) {
@@ -850,7 +601,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize if not already initialized
     if (typeof window.greekLifeApp === 'undefined') {
         window.greekLifeApp = new GreekLifeHub();
     }

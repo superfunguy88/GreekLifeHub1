@@ -12,7 +12,7 @@
     overflow-y: auto; /* Allow scrolling on the modal overlay */
 }
 
-.modal-content {
+.modal .modal-content {
     background-color: white;
     margin: 5% auto;
     padding: 0;
@@ -27,21 +27,21 @@
 }
 
 /* Ensure modal content can scroll */
-.modal-content::-webkit-scrollbar {
+.modal .modal-content::-webkit-scrollbar {
     width: 8px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.modal .modal-content::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.modal .modal-content::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
 }
 
-.modal-content::-webkit-scrollbar-thumb:hover {
+.modal .modal-content::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
 
@@ -50,7 +50,7 @@
     to { transform: translateY(0); opacity: 1; }
 }
 
-.modal-header {
+.modal .modal-header {
     padding: 20px;
     border-bottom: 1px solid #eee;
     display: flex;
@@ -62,13 +62,13 @@
     z-index: 10;
 }
 
-.modal-header h2 {
+.modal .modal-header h2 {
     margin: 0;
     color: #2c3e50;
     font-size: 1.5rem;
 }
 
-.close {
+.modal .close {
     color: #aaa;
     font-size: 28px;
     font-weight: bold;
@@ -76,28 +76,28 @@
     transition: color 0.3s;
 }
 
-.close:hover {
+.modal .close:hover {
     color: #2c3e50;
 }
 
-.modal-body {
+.modal .modal-body {
     padding: 20px;
 }
 
-.form-group {
+.modal .form-group {
     margin-bottom: 20px;
 }
 
-.form-group label {
+.modal .form-group label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
     color: #2c3e50;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e1e8ed;
@@ -107,16 +107,16 @@
     box-sizing: border-box;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.modal .form-group input:focus,
+.modal .form-group select:focus,
+.modal .form-group textarea:focus {
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.btn-primary,
-.btn-secondary {
+.modal .btn-primary,
+.modal .btn-secondary {
     padding: 12px 20px;
     border: none;
     border-radius: 8px;
@@ -129,57 +129,57 @@
     margin-bottom: 10px;
 }
 
-.btn-primary {
+.modal .btn-primary {
     background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
 }
 
-.btn-primary:hover {
+.modal .btn-primary:hover {
     background: linear-gradient(135deg, #2980b9, #2573a7);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
-.btn-secondary {
+.modal .btn-secondary {
     background: linear-gradient(135deg, #95a5a6, #7f8c8d);
     color: white;
 }
 
-.btn-secondary:hover {
+.modal .btn-secondary:hover {
     background: linear-gradient(135deg, #7f8c8d, #6c7a7c);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
 }
 
-.modal-toggle {
+.modal .modal-toggle {
     text-align: center;
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #eee;
 }
 
-.modal-toggle a {
+.modal .modal-toggle a {
     color: #3498db;
     text-decoration: none;
     font-weight: 600;
 }
 
-.modal-toggle a:hover {
+.modal .modal-toggle a:hover {
     text-decoration: underline;
 }
 
-.social-login {
+.modal .social-login {
     margin: 20px 0;
 }
 
-.divider {
+.modal .divider {
     text-align: center;
     position: relative;
     margin: 20px 0;
     color: #7f8c8d;
 }
 
-.divider::before {
+.modal .divider::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -190,14 +190,14 @@
     z-index: 1;
 }
 
-.divider span {
+.modal .divider span {
     background: white;
     position: relative;
     z-index: 2;
     padding: 0 15px;
 }
 
-.loading-spinner {
+.modal .loading-spinner {
     display: inline-block;
     width: 20px;
     height: 20px;
@@ -241,30 +241,34 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .modal-content {
+    .modal .modal-content {
         margin: 2% auto;
         width: 95%;
         max-height: 95vh;
     }
     
-    .modal-header {
+    .modal .modal-header {
         padding: 15px;
     }
     
-    .modal-body {
+    .modal .modal-body {
         padding: 15px;
     }
 }
-.google-login-container {
+.modal .google-login-container {
     display: flex;
     justify-content: center;
     margin: 15px 0;
     width: 100%;
 }
 
-.google-login-btn {
+.modal .google-login-btn {
     width: 100% !important;
     max-width: 300px;
     margin: 0 auto;
     display: block;
+}
+
+#auth-btn {
+    transition: opacity .2s ease, visibility .2s ease;
 }
