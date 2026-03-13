@@ -53,10 +53,9 @@ class UserAuth {
                     this.updateUIForLoggedInUser();
                     this.emitAuthChanged();
                 } else {
-                    this.currentUser = null;
-                    localStorage.removeItem('greekLifeUser');
-                    this.updateUIForLoggedOutUser();
-                    this.emitAuthChanged();
+                    // When Supabase reports no session, treat the user as fully logged out,
+                    // regardless of any stale localStorage from previous visits.
+                    this.clearAuthState();
                 }
             });
             const { data: { session } } = await this.supabase.auth.getSession();
@@ -65,7 +64,8 @@ class UserAuth {
                 this.updateUIForLoggedInUser();
                 this.emitAuthChanged();
             } else {
-                this.checkExistingSession();
+                // No Supabase session on this device: ensure we start fully logged out.
+                this.clearAuthState();
             }
         } catch (e) {
             console.warn('Supabase auth init failed, falling back to local session', e);
@@ -104,6 +104,11 @@ class UserAuth {
     }
 
     checkExistingSession() {
+        // Only use the localStorage fallback when Supabase is not available
+        // (demo mode or Supabase init failed). If Supabase is configured,
+        // it is the single source of truth for auth state.
+        if (this.supabase) return;
+
         try {
             const stored = localStorage.getItem('greekLifeUser');
             if (stored) {
@@ -120,6 +125,17 @@ class UserAuth {
             this.updateUIForLoggedOutUser();
             this.emitAuthChanged();
         }
+    }
+
+    clearAuthState() {
+        this.currentUser = null;
+        try {
+            localStorage.removeItem('greekLifeUser');
+        } catch (e) {
+            console.warn('Failed to clear stored user', e);
+        }
+        this.updateUIForLoggedOutUser();
+        this.emitAuthChanged();
     }
 
     // ---------------- SETUP EVENTS ----------------
