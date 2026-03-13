@@ -1103,7 +1103,7 @@ body {
     display: grid;
     grid-template-columns: 350px 1fr;
     gap: 2rem;
-    height: 600px;
+    height: min(650px, 72vh);
     background: white;
     border-radius: 15px;
     overflow: hidden;
@@ -1316,6 +1316,7 @@ body {
 .chat-window {
     display: flex;
     flex-direction: column;
+    min-height: 0; /* required so .chat-messages can scroll in flex layouts */
 }
 
 .chat-header {
@@ -1332,6 +1333,7 @@ body {
     padding: 1.5rem;
     overflow-y: auto;
     background: #f8fafc;
+    min-height: 0;
 }
 
 .message {
@@ -1623,7 +1625,19 @@ body {
     }
     
     .contacts-list {
-        max-height: 250px;
+        max-height: 35vh;
+    }
+
+    .chat-window {
+        height: 60vh;
+    }
+
+    .chat-messages {
+        padding: 1rem;
+    }
+
+    .message {
+        max-width: 85%;
     }
     
     .hero-stats {

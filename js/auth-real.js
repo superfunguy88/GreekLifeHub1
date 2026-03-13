@@ -28,7 +28,14 @@ class UserAuth {
         }
         try {
             const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-            this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    storage: window.localStorage
+                }
+            });
             this.supabase.auth.onAuthStateChange(async (event, session) => {
                 if (session) {
                     await this.syncUserFromSupabaseSession(session);

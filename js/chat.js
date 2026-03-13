@@ -18,7 +18,14 @@ class ChatSystem {
         if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
             try {
                 const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-                this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true,
+                        storage: window.localStorage
+                    }
+                });
             } catch (e) {
                 console.warn('Supabase load failed', e);
             }
@@ -471,7 +478,17 @@ class ChatSystem {
                     this.updateContactLastMessage(conversationId, row.body);
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                // Helpful when debugging why realtime isn't firing
+                // Expected: SUBSCRIBED
+                console.log('[GreekLife realtime]', { status, channelName, conversationId });
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    const errEl = document.createElement('div');
+                    errEl.className = 'message-error';
+                    errEl.textContent = 'Realtime connection issue — messages may not update instantly.';
+                    if (chatMessages) chatMessages.appendChild(errEl);
+                }
+            });
         this.realtimeUnsubscribe = () => this.supabase.removeChannel(ch);
     }
 
