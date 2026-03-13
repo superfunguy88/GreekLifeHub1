@@ -164,8 +164,12 @@ class UserAuth {
             window.GOOGLE_CLIENT_ID ||
             'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
+        const origin = window.location.origin;
         console.log('Google Client ID:', googleClientId);
-        console.log('Window location:', window.location.origin);
+        console.log(
+            '[GreekLife] Add this origin to Google Cloud Console (Authorized JavaScript origins) if Sign-In fails:',
+            origin
+        );
 
         if (
             !googleClientId ||

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greek Life Hub</title>
     <script>
-        // IMPORTANT: Replace with your actual Google Client ID
+        // Google Sign-In: use your Web application Client ID from Google Cloud Console.
+        // For Sign-In to work for others (e.g. GitHub Pages), add each app URL to
+        // Authorized JavaScript origins. See GOOGLE-SIGNIN-SETUP.md.
         window.GOOGLE_CLIENT_ID = "1022842124200-cka2fp9ibkmhrbdug6kjd7b2le4vrtfs.apps.googleusercontent.com";
     </script>
     <link rel="stylesheet" href="css/main.css">
@@ -276,6 +278,11 @@
 
         <script src="js/api.js"></script>
         <script src="js/auth-real.js"></script>
+        <!-- Messages: add your Supabase URL and anon key to enable persistent messaging. See MESSAGES-SETUP.md -->
+        <script>
+            window.SUPABASE_URL = 'https://ofqouyhmzrfjrhrwvpou.supabase.co';      // e.g. 'https://xxxx.supabase.co'
+            window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcW91eWhtenJmanJocnd2cG91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTk0NzUsImV4cCI6MjA4ODkzNTQ3NX0.LIe8C7LCJOBFrpSxzPO2qCLf8LY_DrltTjPQ0CraRxI'; // from Supabase Project Settings → API
+        </script>
         <script src="js/chat.js"></script>
         <script src="js/main.js"></script>
 

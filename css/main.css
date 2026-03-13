@@ -1165,6 +1165,17 @@ body {
     opacity: 0.7;
 }
 
+.message-loading,
+.message-error {
+    padding: 1rem;
+    text-align: center;
+    color: #666;
+}
+
+.message-error {
+    color: #c0392b;
+}
+
 .message-input {
     display: flex;
     padding: 1.25rem;
