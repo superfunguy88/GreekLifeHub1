@@ -404,17 +404,12 @@ class UserAuth {
         if (this.supabase) {
             try {
                 this.showLoading(true);
-                // Guard against hanging requests: fail with a clear message if Supabase
-                // sign-in takes too long (e.g. network or CORS issues) so the UI
-                // spinner does not get "stuck loading".
-                const loginPromise = this.supabase.auth.signInWithPassword({ email, password });
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Login is taking too long. Check your internet connection or Supabase configuration.')), 15000)
-                );
-                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+                const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
                 console.log('[Auth] signInWithPassword result:', { data, error });
                 if (error) throw error;
-                await this.syncUserFromSupabaseSession(data.session);
+                // Supabase JS v2 returns { data: { user, session } }
+                const session = data && (data.session || data);
+                await this.syncUserFromSupabaseSession(session);
                 this.updateUIForLoggedInUser();
                 this.emitAuthChanged();
                 document.getElementById('login-modal').style.display = 'none';
