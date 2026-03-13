@@ -1,27 +1,79 @@
-// auth-real.js - Frontend-only auth for static hosting (GitHub Pages, Live Server, etc.)
-//
-// - Google login works via Google Identity Services and stores the user in localStorage
-// - Regular login/register are "demo" logins (no real backend)
-// - No /api/* calls, so it works fine on static hosting
+// auth-real.js - Supabase Auth + profiles for real user accounts and messaging
+// Requires window.SUPABASE_URL and window.SUPABASE_ANON_KEY (set before this script).
+// Run supabase-migrations/001_real_messaging.sql in Supabase SQL Editor first.
 
 class UserAuth {
     constructor() {
         this.currentUser = null;
+        this.supabase = null;
         this.init();
     }
 
     init() {
-        this.checkExistingSession();
         this.setupLoginEvents();
         this.setupLogoutEvents();
         this.setupRegisterEvents();
         this.setupModalToggle();
         this.setupAuthButton();
         this.setupPasswordReset();
+        this.initSupabaseAsync();
+    }
+
+    // ---------------- SUPABASE SESSION ----------------
+
+    async initSupabaseAsync() {
+        if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+            this.checkExistingSession();
+            return;
+        }
+        try {
+            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+            this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            this.supabase.auth.onAuthStateChange(async (event, session) => {
+                if (session) {
+                    await this.syncUserFromSupabaseSession(session);
+                    this.updateUIForLoggedInUser();
+                    this.emitAuthChanged();
+                } else {
+                    this.currentUser = null;
+                    localStorage.removeItem('greekLifeUser');
+                    this.updateUIForLoggedOutUser();
+                    this.emitAuthChanged();
+                }
+            });
+            const { data: { session } } = await this.supabase.auth.getSession();
+            if (session) {
+                await this.syncUserFromSupabaseSession(session);
+                this.updateUIForLoggedInUser();
+                this.emitAuthChanged();
+            } else {
+                this.checkExistingSession();
+            }
+        } catch (e) {
+            console.warn('Supabase auth init failed, falling back to local session', e);
+            this.checkExistingSession();
+        }
         this.initGoogleAuth();
     }
 
-    // ---------------- SESSION ----------------
+    async syncUserFromSupabaseSession(session) {
+        const u = session.user;
+        const meta = u.user_metadata || {};
+        let profile = { id: u.id, name: meta.full_name || meta.name || u.email?.split('@')[0] || 'User', email: u.email || '', picture: meta.avatar_url || meta.picture || null, username: meta.username || null, chapter: meta.chapter || null, role: meta.role || null, provider: u.app_metadata?.provider || 'email' };
+        if (this.supabase) {
+            const { data: row } = await this.supabase.from('profiles').select('name, username, email, chapter, role, picture').eq('id', u.id).single();
+            if (row) {
+                profile.name = row.name || profile.name;
+                profile.username = row.username || profile.username;
+                profile.email = row.email || profile.email;
+                profile.chapter = row.chapter || profile.chapter;
+                profile.role = row.role || profile.role;
+                profile.picture = row.picture || profile.picture;
+            }
+        }
+        this.currentUser = profile;
+        localStorage.setItem('greekLifeUser', JSON.stringify(profile));
+    }
 
     checkExistingSession() {
         try {
@@ -29,16 +81,16 @@ class UserAuth {
             if (stored) {
                 this.currentUser = JSON.parse(stored);
                 this.updateUIForLoggedInUser();
-                this.emitAuthChanged(); // NEW
+                this.emitAuthChanged();
             } else {
                 this.updateUIForLoggedOutUser();
-                this.emitAuthChanged(); // NEW
+                this.emitAuthChanged();
             }
         } catch (err) {
             console.error('Failed to read stored user:', err);
             this.currentUser = null;
             this.updateUIForLoggedOutUser();
-            this.emitAuthChanged(); // NEW
+            this.emitAuthChanged();
         }
     }
 
@@ -246,44 +298,43 @@ class UserAuth {
         this.handleGoogleLogin(response.credential);
     }
 
-    // Frontend-only Google login: decode JWT, store user, update UI.
+    // Google login: prefer Supabase signInWithIdToken so user gets real account + messaging.
     async handleGoogleLogin(credential) {
         try {
             this.showLoading(true);
+            if (!credential) throw new Error('No Google credential received.');
 
-            if (!credential) {
-                throw new Error('No Google credential received.');
+            if (this.supabase) {
+                const { data, error } = await this.supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: credential
+                });
+                if (!error && data?.session) {
+                    await this.syncUserFromSupabaseSession(data.session);
+                    this.updateUIForLoggedInUser();
+                    this.emitAuthChanged();
+                    document.querySelectorAll('.modal').forEach((m) => { m.style.display = 'none'; });
+                    this.showNotification(`Signed in as ${this.currentUser.name} (Google)`, 'success');
+                    return;
+                }
             }
 
             const userInfo = this.decodeJwt(credential);
-
             const user = {
                 name: userInfo.name || userInfo.given_name || 'Google User',
                 email: userInfo.email || '',
                 picture: userInfo.picture || null,
                 provider: 'google'
             };
-
             this.currentUser = user;
             localStorage.setItem('greekLifeUser', JSON.stringify(user));
-
             this.updateUIForLoggedInUser();
-            this.emitAuthChanged(); // NEW
-
-            document.querySelectorAll('.modal').forEach((m) => {
-                m.style.display = 'none';
-            });
-
-            this.showNotification(
-                `Signed in as ${user.name} (Google)`,
-                'success'
-            );
+            this.emitAuthChanged();
+            document.querySelectorAll('.modal').forEach((m) => { m.style.display = 'none'; });
+            this.showNotification(`Signed in as ${user.name} (Google). Sign in with email in this app to message others.`, 'info');
         } catch (error) {
             console.error('Google login error:', error);
-            this.showNotification(
-                error.message || 'Google login failed. Please try again.',
-                'error'
-            );
+            this.showNotification(error.message || 'Google login failed. Please try again.', 'error');
         } finally {
             this.showLoading(false);
         }
@@ -311,33 +362,40 @@ class UserAuth {
         return JSON.parse(jsonPayload);
     }
 
-    // ---------------- LOCAL LOGIN / REGISTER (DEMO) ----------------
+    // ---------------- LOGIN / REGISTER (Supabase Auth) ----------------
 
     async handleLogin(form) {
-        const username = form.querySelector('#username').value.trim();
+        const email = form.querySelector('#username').value.trim();
         const password = form.querySelector('#password').value.trim();
 
-        if (!username || !password) {
-            this.showNotification(
-                'Please enter both username and password',
-                'error'
-            );
+        if (!email || !password) {
+            this.showNotification('Please enter email and password', 'error');
             return;
         }
 
-        // Demo-only local "login" – in a real app this would go to your backend.
-        const user = {
-            name: username,
-            email: '',
-            provider: 'local'
-        };
+        if (this.supabase) {
+            try {
+                this.showLoading(true);
+                const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                await this.syncUserFromSupabaseSession(data.session);
+                this.updateUIForLoggedInUser();
+                this.emitAuthChanged();
+                document.getElementById('login-modal').style.display = 'none';
+                this.showNotification(`Logged in as ${this.currentUser.name}`, 'success');
+            } catch (e) {
+                this.showNotification(e.message || 'Login failed', 'error');
+            } finally {
+                this.showLoading(false);
+            }
+            return;
+        }
 
+        const user = { name: email.split('@')[0], email, provider: 'local' };
         this.currentUser = user;
         localStorage.setItem('greekLifeUser', JSON.stringify(user));
-
         this.updateUIForLoggedInUser();
-        this.emitAuthChanged(); // NEW
-
+        this.emitAuthChanged();
         document.getElementById('login-modal').style.display = 'none';
         this.showNotification(`Logged in as ${user.name}`, 'success');
     }
@@ -356,29 +414,56 @@ class UserAuth {
         }
 
         if (password.length < 6) {
-            this.showNotification(
-                'Password must be at least 6 characters',
-                'error'
-            );
+            this.showNotification('Password must be at least 6 characters', 'error');
             return;
         }
 
-        // Demo-only "account creation"
-        const user = {
-            name,
-            username,
-            email,
-            chapter,
-            role,
-            provider: 'local'
-        };
+        if (this.supabase) {
+            try {
+                this.showLoading(true);
+                const { data, error } = await this.supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { full_name: name, username, chapter, role }
+                    }
+                });
+                if (error) throw error;
+                if (data.user) {
+                    await this.supabase.from('profiles').upsert({
+                        id: data.user.id,
+                        name,
+                        username,
+                        email,
+                        chapter,
+                        role
+                    }, { onConflict: 'id' });
+                    if (data.session) {
+                        await this.syncUserFromSupabaseSession(data.session);
+                    } else {
+                        this.currentUser = { id: data.user.id, name, username, email, chapter, role, provider: 'email' };
+                        localStorage.setItem('greekLifeUser', JSON.stringify(this.currentUser));
+                    }
+                    this.updateUIForLoggedInUser();
+                    this.emitAuthChanged();
+                    document.getElementById('register-modal').style.display = 'none';
+                    this.showNotification(
+                        data.session ? 'Account created & logged in!' : 'Check your email to confirm your account.',
+                        'success'
+                    );
+                }
+            } catch (e) {
+                this.showNotification(e.message || 'Registration failed', 'error');
+            } finally {
+                this.showLoading(false);
+            }
+            return;
+        }
 
-        this.currentUser = user;
-        localStorage.setItem('greekLifeUser', JSON.stringify(user));
-
+        this.currentUser = { name, username, email, chapter, role, provider: 'local' };
+        localStorage.setItem('greekLifeUser', JSON.stringify(this.currentUser));
         this.updateUIForLoggedInUser();
-        this.emitAuthChanged(); // NEW
-
+        this.emitAuthChanged();
         document.getElementById('register-modal').style.display = 'none';
         this.showNotification('Account created & logged in (demo only)', 'success');
     }
@@ -421,10 +506,13 @@ class UserAuth {
     }
 
     async logout() {
+        if (this.supabase) {
+            try { await this.supabase.auth.signOut(); } catch (e) { /* ignore */ }
+        }
         this.currentUser = null;
         localStorage.removeItem('greekLifeUser');
         this.updateUIForLoggedOutUser();
-        this.emitAuthChanged(); // NEW
+        this.emitAuthChanged();
         this.showNotification('You have been logged out', 'info');
     }
 
