@@ -47,6 +47,7 @@ class UserAuth {
                 window.greekLifeSupabase = this.supabase;
             }
             this.supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('[Auth] onAuthStateChange:', event, { hasSession: !!session });
                 if (session) {
                     await this.syncUserFromSupabaseSession(session);
                     this.updateUIForLoggedInUser();
@@ -411,6 +412,7 @@ class UserAuth {
                     setTimeout(() => reject(new Error('Login is taking too long. Check your internet connection or Supabase configuration.')), 15000)
                 );
                 const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+                console.log('[Auth] signInWithPassword result:', { data, error });
                 if (error) throw error;
                 await this.syncUserFromSupabaseSession(data.session);
                 this.updateUIForLoggedInUser();
