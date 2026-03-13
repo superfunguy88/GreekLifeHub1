@@ -76,7 +76,23 @@ class UserAuth {
     async syncUserFromSupabaseSession(session) {
         const u = session.user;
         const meta = u.user_metadata || {};
-        let profile = { id: u.id, name: meta.full_name || meta.name || u.email?.split('@')[0] || 'User', email: u.email || '', picture: meta.avatar_url || meta.picture || null, username: meta.username || null, chapter: meta.chapter || null, role: meta.role || null, provider: u.app_metadata?.provider || 'email' };
+        // Start with a profile built purely from auth metadata so the app
+        // treats the user as logged in immediately, even if the profiles
+        // table query is slow or fails.
+        let profile = {
+            id: u.id,
+            name: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
+            email: u.email || '',
+            picture: meta.avatar_url || meta.picture || null,
+            username: meta.username || null,
+            chapter: meta.chapter || null,
+            role: meta.role || null,
+            provider: (u.app_metadata && u.app_metadata.provider) || 'email'
+        };
+        this.currentUser = profile;
+        localStorage.setItem('greekLifeUser', JSON.stringify(profile));
+
+        // Then, non-critically, try to enrich from the profiles table.
         if (this.supabase) {
             try {
                 const { data: row, error } = await this.supabase
@@ -85,22 +101,23 @@ class UserAuth {
                     .eq('id', u.id)
                     .maybeSingle();
 
-                // It's valid for a user to have no profile row yet (e.g. created in Supabase dashboard
-                // or via Google only). In that case we just fall back to auth metadata above.
                 if (!error && row) {
-                    profile.name = row.name || profile.name;
-                    profile.username = row.username || profile.username;
-                    profile.email = row.email || profile.email;
-                    profile.chapter = row.chapter || profile.chapter;
-                    profile.role = row.role || profile.role;
-                    profile.picture = row.picture || profile.picture;
+                    profile = {
+                        ...profile,
+                        name: row.name || profile.name,
+                        username: row.username || profile.username,
+                        email: row.email || profile.email,
+                        chapter: row.chapter || profile.chapter,
+                        role: row.role || profile.role,
+                        picture: row.picture || profile.picture
+                    };
+                    this.currentUser = profile;
+                    localStorage.setItem('greekLifeUser', JSON.stringify(profile));
                 }
             } catch (err) {
                 console.warn('Failed to load profiles row for user; using auth metadata only.', err);
             }
         }
-        this.currentUser = profile;
-        localStorage.setItem('greekLifeUser', JSON.stringify(profile));
     }
 
     checkExistingSession() {
