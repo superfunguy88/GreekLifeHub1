@@ -48,6 +48,51 @@ body {
     padding: 0 20px;
 }
 
+/* Account Section */
+.account-section {
+    background: var(--light-gray);
+}
+
+.account-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.account-logged-out {
+    text-align: center;
+    color: #666;
+    padding: 1rem 0;
+}
+
+.account-form .account-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.25rem;
+}
+
+.account-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.account-status {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.account-status.success {
+    color: var(--success-green);
+}
+
+.account-status.error {
+    color: var(--danger-red);
+}
+
 /* Fixed Header Styles - Greek Inspired */
 .main-header {
     background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
@@ -1314,6 +1359,12 @@ body {
     background: linear-gradient(135deg, var(--primary-gold), #F3C544);
     color: var(--dark-blue);
     border-top-right-radius: 5px;
+}
+
+@media (max-width: 900px) {
+    .account-form .account-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .message-time {
