@@ -22,22 +22,11 @@ class AccountDetails {
 
     async getSupabase() {
         if (this.supabase) return this.supabase;
-        if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
-        try {
-            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-            this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                    detectSessionInUrl: true,
-                    storage: window.localStorage
-                }
-            });
+        if (window.greekLifeSupabase) {
+            this.supabase = window.greekLifeSupabase;
             return this.supabase;
-        } catch (e) {
-            console.warn('Supabase load failed (account)', e);
-            return null;
         }
+        return null;
     }
 
     setStatus(text, type) {

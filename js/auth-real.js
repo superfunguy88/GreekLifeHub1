@@ -27,15 +27,21 @@ class UserAuth {
             return;
         }
         try {
-            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-            this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                    detectSessionInUrl: true,
-                    storage: window.localStorage
-                }
-            });
+            if (window.greekLifeSupabase) {
+                // Reuse existing shared client (avoid multiple GoTrue instances)
+                this.supabase = window.greekLifeSupabase;
+            } else {
+                const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+                this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true,
+                        storage: window.localStorage
+                    }
+                });
+                window.greekLifeSupabase = this.supabase;
+            }
             this.supabase.auth.onAuthStateChange(async (event, session) => {
                 if (session) {
                     await this.syncUserFromSupabaseSession(session);

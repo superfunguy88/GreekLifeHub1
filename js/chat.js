@@ -15,22 +15,14 @@ class ChatSystem {
     }
 
     async initAsync() {
-        if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-            try {
-                const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-                this.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-                    auth: {
-                        persistSession: true,
-                        autoRefreshToken: true,
-                        detectSessionInUrl: true,
-                        storage: window.localStorage
-                    }
-                });
-            } catch (e) {
-                console.warn('Supabase load failed', e);
-            }
+        // Reuse the shared Supabase client created in auth-real.js
+        if (window.greekLifeSupabase) {
+            this.supabase = window.greekLifeSupabase;
         }
-        window.addEventListener('greeklife:auth-changed', () => this.loadContacts());
+        window.addEventListener('greeklife:auth-changed', () => {
+            this.supabase = window.greekLifeSupabase || this.supabase;
+            this.loadContacts();
+        });
         await this.loadContacts();
     }
 
