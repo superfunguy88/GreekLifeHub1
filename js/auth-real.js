@@ -570,13 +570,15 @@ class UserAuth {
     }
 
     async logout() {
+        console.log('[Auth] logout requested');
         if (this.supabase) {
-            try { await this.supabase.auth.signOut(); } catch (e) { /* ignore */ }
+            try {
+                await this.supabase.auth.signOut();
+            } catch (e) {
+                console.warn('Supabase signOut failed (continuing with local logout):', e);
+            }
         }
-        this.currentUser = null;
-        localStorage.removeItem('greekLifeUser');
-        this.updateUIForLoggedOutUser();
-        this.emitAuthChanged();
+        this.clearAuthState();
         this.showNotification('You have been logged out', 'info');
     }
 

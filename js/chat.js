@@ -61,6 +61,11 @@ class ChatSystem {
         const contactsList = document.querySelector('.contacts-list');
         if (!contactsList) return;
 
+        // Make sure we always pick up the shared Supabase client once it exists
+        if (!this.supabase && window.greekLifeSupabase) {
+            this.supabase = window.greekLifeSupabase;
+        }
+
         const meId = this.getCurrentUserId();
         if (!this.supabase || !meId) {
             contactsList.innerHTML = '<div class="contacts-placeholder"><p>Log in to message other members.</p><p class="contacts-hint">Use Login/Register above and add contacts to start chatting.</p></div>';
