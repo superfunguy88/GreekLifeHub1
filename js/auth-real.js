@@ -22,6 +22,10 @@ class UserAuth {
     // ---------------- SUPABASE SESSION ----------------
 
     async initSupabaseAsync() {
+        // Always set up Google buttons, even if Supabase is misconfigured
+        // so that Google login UI is visible and can surface its own errors.
+        this.initGoogleAuth();
+
         if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
             this.checkExistingSession();
             return;
@@ -66,7 +70,6 @@ class UserAuth {
             console.warn('Supabase auth init failed, falling back to local session', e);
             this.checkExistingSession();
         }
-        this.initGoogleAuth();
     }
 
     async syncUserFromSupabaseSession(session) {
@@ -389,7 +392,14 @@ class UserAuth {
         if (this.supabase) {
             try {
                 this.showLoading(true);
-                const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+                // Guard against hanging requests: fail with a clear message if Supabase
+                // sign-in takes too long (e.g. network or CORS issues) so the UI
+                // spinner does not get "stuck loading".
+                const loginPromise = this.supabase.auth.signInWithPassword({ email, password });
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Login is taking too long. Check your internet connection or Supabase configuration.')), 15000)
+                );
+                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
                 if (error) throw error;
                 await this.syncUserFromSupabaseSession(data.session);
                 this.updateUIForLoggedInUser();
