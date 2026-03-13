@@ -43,8 +43,16 @@ class GreekLifeHub {
     }
 
     onAuthChanged() {
-        // Update UI that depends on "currentUser"
-        // (auth-real.js already updates username + avatar + buttons)
+        // Keep header/user UI in sync with auth-real.js
+        if (window.userAuth) {
+            if (this.currentUser && typeof window.userAuth.updateUIForLoggedInUser === 'function') {
+                window.userAuth.updateUIForLoggedInUser();
+            } else if (!this.currentUser && typeof window.userAuth.updateUIForLoggedOutUser === 'function') {
+                window.userAuth.updateUIForLoggedOutUser();
+            }
+        }
+
+        // Also keep any additional app-level profile UI in sync
         this.updateUserProfile();
 
         // OPTIONAL: if user logs out while on a private-ish section, kick them home
