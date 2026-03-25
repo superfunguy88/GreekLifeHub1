@@ -6,6 +6,8 @@ class UserAuth {
     constructor() {
         this.currentUser = null;
         this.supabase = null;
+        /** When true, ignore SIGNED_IN from Supabase until sign-out settles (prevents UI re-login during logout). */
+        this._logoutInProgress = false;
         this.init();
     }
 
@@ -49,20 +51,22 @@ class UserAuth {
             this.supabase.auth.onAuthStateChange(async (event, session) => {
                 console.log('[Auth] onAuthStateChange:', event, { hasSession: !!session });
                 if (session) {
-                    await this.syncUserFromSupabaseSession(session);
-                    this.updateUIForLoggedInUser();
-                    this.emitAuthChanged();
+                    if (this._logoutInProgress) {
+                        return;
+                    }
+                    this.applySessionUser(session);
+                    void this.enrichProfileFromSupabase(session.user.id);
                 } else {
-                    // When Supabase reports no session, treat the user as fully logged out,
-                    // regardless of any stale localStorage from previous visits.
+                    this._logoutInProgress = false;
                     this.clearAuthState();
                 }
             });
             const { data: { session } } = await this.supabase.auth.getSession();
             if (session) {
-                await this.syncUserFromSupabaseSession(session);
-                this.updateUIForLoggedInUser();
-                this.emitAuthChanged();
+                if (!this._logoutInProgress) {
+                    this.applySessionUser(session);
+                    void this.enrichProfileFromSupabase(session.user.id);
+                }
             } else {
                 // No Supabase session on this device: ensure we start fully logged out.
                 this.clearAuthState();
@@ -73,13 +77,14 @@ class UserAuth {
         }
     }
 
-    async syncUserFromSupabaseSession(session) {
+    /**
+     * Apply Supabase session to local state and UI immediately (sync).
+     * Chat and other listeners must see currentUser.id without waiting on profiles table.
+     */
+    applySessionUser(session) {
         const u = session.user;
         const meta = u.user_metadata || {};
-        // Start with a profile built purely from auth metadata so the app
-        // treats the user as logged in immediately, even if the profiles
-        // table query is slow or fails.
-        let profile = {
+        const profile = {
             id: u.id,
             name: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
             email: u.email || '',
@@ -91,33 +96,43 @@ class UserAuth {
         };
         this.currentUser = profile;
         localStorage.setItem('greekLifeUser', JSON.stringify(profile));
+        this.updateUIForLoggedInUser();
+        this.emitAuthChanged();
+    }
 
-        // Then, non-critically, try to enrich from the profiles table.
-        if (this.supabase) {
-            try {
-                const { data: row, error } = await this.supabase
-                    .from('profiles')
-                    .select('name, username, email, chapter, role, picture')
-                    .eq('id', u.id)
-                    .maybeSingle();
+    /** Optional profiles row merge; does not block login UI or messaging. */
+    async enrichProfileFromSupabase(userId) {
+        if (!this.supabase || !userId) return;
+        try {
+            const { data: row, error } = await this.supabase
+                .from('profiles')
+                .select('name, username, email, chapter, role, picture')
+                .eq('id', userId)
+                .maybeSingle();
 
-                if (!error && row) {
-                    profile = {
-                        ...profile,
-                        name: row.name || profile.name,
-                        username: row.username || profile.username,
-                        email: row.email || profile.email,
-                        chapter: row.chapter || profile.chapter,
-                        role: row.role || profile.role,
-                        picture: row.picture || profile.picture
-                    };
-                    this.currentUser = profile;
-                    localStorage.setItem('greekLifeUser', JSON.stringify(profile));
-                }
-            } catch (err) {
-                console.warn('Failed to load profiles row for user; using auth metadata only.', err);
-            }
+            if (error || !row || !this.currentUser || this.currentUser.id !== userId) return;
+
+            const profile = {
+                ...this.currentUser,
+                name: row.name || this.currentUser.name,
+                username: row.username || this.currentUser.username,
+                email: row.email || this.currentUser.email,
+                chapter: row.chapter || this.currentUser.chapter,
+                role: row.role || this.currentUser.role,
+                picture: row.picture || this.currentUser.picture
+            };
+            this.currentUser = profile;
+            localStorage.setItem('greekLifeUser', JSON.stringify(profile));
+            this.updateUIForLoggedInUser();
+            this.emitAuthChanged();
+        } catch (err) {
+            console.warn('Failed to load profiles row for user; using auth metadata only.', err);
         }
+    }
+
+    async syncUserFromSupabaseSession(session) {
+        this.applySessionUser(session);
+        await this.enrichProfileFromSupabase(session.user.id);
     }
 
     checkExistingSession() {
@@ -571,14 +586,22 @@ class UserAuth {
 
     async logout() {
         console.log('[Auth] logout requested');
+        this._logoutInProgress = true;
+        // Clear UI + localStorage first so logout always works even if signOut hangs (network/adblock).
+        this.clearAuthState();
         if (this.supabase) {
             try {
-                await this.supabase.auth.signOut();
+                await Promise.race([
+                    this.supabase.auth.signOut(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('signOut timeout')), 8000)
+                    )
+                ]);
             } catch (e) {
-                console.warn('Supabase signOut failed (continuing with local logout):', e);
+                console.warn('Supabase signOut finished with error or timeout (local state already cleared):', e);
             }
         }
-        this.clearAuthState();
+        this._logoutInProgress = false;
         this.showNotification('You have been logged out', 'info');
     }
 

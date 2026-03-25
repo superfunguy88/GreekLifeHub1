@@ -43,16 +43,11 @@ class GreekLifeHub {
     }
 
     onAuthChanged() {
-        // Keep header/user UI in sync with auth-real.js
-        if (window.userAuth) {
-            if (this.currentUser && typeof window.userAuth.updateUIForLoggedInUser === 'function') {
-                window.userAuth.updateUIForLoggedInUser();
-            } else if (!this.currentUser && typeof window.userAuth.updateUIForLoggedOutUser === 'function') {
-                window.userAuth.updateUIForLoggedOutUser();
-            }
-        }
+        // Header Login/Logout is owned only by auth-real.js (from Supabase + its events).
+        // Do not call userAuth.updateUI* here: GreekLifeApp.currentUser can come from stale
+        // localStorage before userAuth finishes getSession(), which caused "logged in" header
+        // while chat still thought you were logged out.
 
-        // Also keep any additional app-level profile UI in sync
         this.updateUserProfile();
 
         // OPTIONAL: if user logs out while on a private-ish section, kick them home

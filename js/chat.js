@@ -24,6 +24,26 @@ class ChatSystem {
             this.loadContacts();
         });
         await this.loadContacts();
+        // Auth + Supabase init are async; first loadContacts often runs before client/user exist.
+        this.scheduleContactsRetry();
+    }
+
+    /** Re-run loadContacts until Supabase + user id exist or attempts exhausted. */
+    scheduleContactsRetry(maxAttempts = 40, intervalMs = 150) {
+        let n = 0;
+        const tick = () => {
+            if (n++ >= maxAttempts) return;
+            if (!this.supabase && window.greekLifeSupabase) {
+                this.supabase = window.greekLifeSupabase;
+            }
+            const meId = this.getCurrentUserId();
+            if (this.supabase && meId) {
+                this.loadContacts();
+                return;
+            }
+            setTimeout(tick, intervalMs);
+        };
+        setTimeout(tick, intervalMs);
     }
 
     getCurrentUser() {
